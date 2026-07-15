@@ -1531,6 +1531,67 @@ tbody tr:hover {
   font-size: 12px;
 }
 
+.call-detail-card {
+  margin-top: 18px;
+}
+
+.call-detail-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 0 0 20px;
+}
+
+.call-detail-grid div,
+.call-detail-section,
+.call-timeline-item,
+.call-message-item {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(5, 17, 35, 0.42);
+  padding: 14px;
+}
+
+.call-detail-grid dt,
+.call-detail-section time,
+.call-timeline-item time,
+.call-message-item time {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.call-detail-grid dd {
+  margin: 6px 0 0;
+}
+
+.call-detail-section {
+  margin-top: 14px;
+}
+
+.call-detail-section h4 {
+  margin: 0 0 12px;
+}
+
+.call-timeline-item,
+.call-message-item {
+  margin-top: 10px;
+}
+
+.call-timeline-item time,
+.call-message-item time {
+  float: right;
+}
+
+.call-timeline-item pre {
+  margin: 10px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #b8c9df;
+  font: inherit;
+  font-size: 12px;
+}
+
 .calls-history-heading {
   margin-top: 10px;
 }

@@ -87,6 +87,46 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+function sanitizeEventData(value) {
+  if (!value) {
+    return value;
+  }
+
+  try {
+    const data = JSON.parse(value);
+
+    if (data.streamError) {
+      data.streamError =
+        "Incidencia de Media Stream";
+    }
+
+    return JSON.stringify(data);
+  } catch {
+    return "Información técnica registrada";
+  }
+}
+
+function sanitizeCallForAdmin(call) {
+  return {
+    ...call,
+    stream_error: call.stream_error
+      ? "Incidencia de Media Stream"
+      : null,
+    error_message: call.error_message
+      ? "La llamada registró un error interno"
+      : null,
+    events: Array.isArray(call.events)
+      ? call.events.map(event => ({
+          ...event,
+          event_data:
+            sanitizeEventData(
+              event.event_data
+            )
+        }))
+      : call.events
+  };
+}
+
 router.use(requireAdminSession);
 
 router.use(
@@ -176,7 +216,10 @@ router.get(
         ok: true,
         metrics:
           getDashboardMetrics(),
-        calls: listCalls(8)
+        calls:
+          listCalls(8).map(
+            sanitizeCallForAdmin
+          )
       });
     } catch (error) {
       console.error(
@@ -197,7 +240,7 @@ router.get("/api/calls", (req, res) => {
   try {
     const calls = listCalls(
       req.query.limit || 100
-    );
+    ).map(sanitizeCallForAdmin);
 
     res.json({
       ok: true,
@@ -236,7 +279,8 @@ router.get(
 
       res.json({
         ok: true,
-        call
+        call:
+          sanitizeCallForAdmin(call)
       });
     } catch (error) {
       console.error(

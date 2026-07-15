@@ -16,9 +16,13 @@ import {
   verifyCsrfToken
 } from "./admin/middleware/csrf.js";
 import {
-  ensureInitialAdmin,
-  addAuditEntry
+  ensureInitialAdmin
 } from "./admin/services/auth-service.js";
+
+import {
+  CallServiceError,
+  createCallService
+} from "./admin/services/call-service.js";
 
 import {
   createOrUpdateCall,
@@ -231,6 +235,35 @@ function buildStreamTwiML() {
   return voiceResponse.toString();
 }
 
+const allowedAgents = String(
+  process.env.ALLOWED_AI_AGENTS ||
+    "principal"
+)
+  .split(",")
+  .map(value => value.trim())
+  .filter(Boolean);
+
+const allowedVoices = String(
+  process.env.ALLOWED_REALTIME_VOICES ||
+    OPENAI_REALTIME_VOICE
+)
+  .split(",")
+  .map(value => value.trim())
+  .filter(Boolean);
+
+const callService = createCallService({
+  twilioClient,
+  buildStreamTwiML,
+  publicBaseUrl: PUBLIC_BASE_URL,
+  fromNumber: TWILIO_PHONE_NUMBER,
+  allowedTestNumber: ALLOWED_TEST_NUMBER,
+  defaultModel: OPENAI_REALTIME_MODEL,
+  defaultVoice: OPENAI_REALTIME_VOICE,
+  companyName: COMPANY_NAME,
+  allowedAgents,
+  allowedVoices
+});
+
 /*
  * Estado del servicio.
  */
@@ -256,150 +289,21 @@ app.post(
     const adminUser =
       req.session.adminUser;
 
-    const requestedNumber =
-      String(
-        req.body.telefono || ""
-      ).trim();
-
-    const client =
-      String(
-        req.body.client || ""
-      ).trim();
-
-    const campaign =
-      String(
-        req.body.campaign || ""
-      ).trim();
-
-    const notes =
-      String(
-        req.body.notes || ""
-      ).trim();
-
-    if (!requestedNumber) {
-      return res.status(400).json({
-        ok: false,
-        accepted: false,
-        error:
-          "Debes indicar el número de teléfono"
-      });
-    }
-
-    if (
-      requestedNumber !==
-      ALLOWED_TEST_NUMBER
-    ) {
-      addAuditEntry({
-        userId: adminUser.id,
-        username: adminUser.username,
-        action:
-          "admin-call-rejected",
-        detail: {
-          requestedNumber,
-          reason:
-            "number-not-authorized"
-        },
-        ip: req.ip
-      });
-
-      return res.status(403).json({
-        ok: false,
-        accepted: false,
-        error:
-          "El número no está autorizado para las pruebas"
-      });
-    }
-
     try {
-      const callTwiml =
-        buildStreamTwiML();
-
-      const call =
-        await twilioClient
-          .calls
-          .create({
-            to:
-              requestedNumber,
-
-            from:
-              TWILIO_PHONE_NUMBER,
-
-            twiml:
-              callTwiml,
-
-            statusCallback:
-              `${PUBLIC_BASE_URL}/twilio/status`,
-
-            statusCallbackMethod:
-              "POST",
-
-            statusCallbackEvent: [
-              "initiated",
-              "ringing",
-              "answered",
-              "completed"
-            ]
-          });
-
-      createOrUpdateCall({
-        callSid: call.sid,
-        direction: "outbound",
-        fromNumber:
-          TWILIO_PHONE_NUMBER,
-        toNumber:
-          requestedNumber,
-        status:
-          call.status || "queued",
-        model:
-          OPENAI_REALTIME_MODEL,
-        voice:
-          OPENAI_REALTIME_VOICE,
-        companyName:
-          COMPANY_NAME
-      });
-
-      addCallEvent({
-        callSid: call.sid,
-        eventType:
-          "admin-call-created",
-        eventData: {
-          adminUserId:
-            adminUser.id,
-          adminUsername:
-            adminUser.username,
-          client:
-            client || null,
-          campaign:
-            campaign || null,
-          notes:
-            notes || null
-        }
-      });
-
-      addAuditEntry({
-        userId:
-          adminUser.id,
-        username:
-          adminUser.username,
-        action:
-          "admin-call-started",
-        detail: {
-          callSid: call.sid,
-          requestedNumber,
-          client:
-            client || null,
-          campaign:
-            campaign || null
-        },
-        ip: req.ip
-      });
+      const result =
+        await callService.startOutboundCall({
+          input: req.body,
+          source: "admin",
+          adminUser,
+          ip: req.ip
+        });
 
       return res.status(201).json({
         ok: true,
         accepted: true,
-        call_sid: call.sid,
-        status:
-          call.status || "queued",
+        request_id: result.requestId,
+        call_sid: result.callSid,
+        status: result.status,
         error: ""
       });
     } catch (error) {
@@ -408,30 +312,37 @@ app.post(
         error.message
       );
 
-      addAuditEntry({
-        userId:
-          adminUser.id,
-        username:
-          adminUser.username,
-        action:
-          "admin-call-error",
-        detail: {
-          requestedNumber,
-          error:
-            error.message
-        },
-        ip: req.ip
-      });
+      const serviceError =
+        error instanceof CallServiceError
+          ? error
+          : null;
 
-      return res.status(500).json({
+      return res.status(
+        serviceError?.status || 500
+      ).json({
         ok: false,
         accepted: false,
         call_sid: null,
         status: "ERROR",
         error:
-          "No se pudo iniciar la llamada"
+          serviceError?.publicMessage ||
+          "No se pudo iniciar la llamada",
+        code:
+          serviceError?.code ||
+          "internal-error"
       });
     }
+  }
+);
+
+app.get(
+  "/admin/api/calls/options",
+  requireAdminSession,
+  (req, res) => {
+    res.json({
+      ok: true,
+      ...callService.options()
+    });
   }
 );
 
@@ -490,136 +401,43 @@ app.post(
   requireApiKey,
   async (req, res) => {
     try {
-      const requestedNumber =
-        String(
-          req.body.telefono || ""
-        ).trim();
-
-      if (!requestedNumber) {
-        return res
-          .status(400)
-          .json({
-            accepted: false,
-
-            error:
-              "Debes indicar el campo telefono"
-          });
-      }
-
-      /*
-       * Durante las pruebas únicamente
-       * puede llamarse al número autorizado.
-       */
-      if (
-        requestedNumber !==
-        ALLOWED_TEST_NUMBER
-      ) {
-        return res
-          .status(403)
-          .json({
-            accepted: false,
-
-            error:
-              "El número no está autorizado para las pruebas"
-          });
-      }
-
-      const callTwiml =
-        buildStreamTwiML();
-
-      console.log(
-        "Creando llamada con TwiML directo:",
-        callTwiml
-      );
-
-      const call =
-        await twilioClient
-          .calls
-          .create({
-            to:
-              requestedNumber,
-
-            from:
-              TWILIO_PHONE_NUMBER,
-
-            twiml:
-              callTwiml,
-
-            statusCallback:
-              `${PUBLIC_BASE_URL}/twilio/status`,
-
-            statusCallbackMethod:
-              "POST",
-
-            statusCallbackEvent: [
-              "initiated",
-              "ringing",
-              "answered",
-              "completed"
-            ]
-          });
-
-      console.log(
-        "Llamada creada:",
-        call.sid
-      );
-
-      createOrUpdateCall({
-        callSid: call.sid,
-        direction: "outbound",
-        fromNumber: TWILIO_PHONE_NUMBER,
-        toNumber: requestedNumber,
-        status: call.status || "queued",
-        model: OPENAI_REALTIME_MODEL,
-        voice: OPENAI_REALTIME_VOICE,
-        companyName: COMPANY_NAME
-      });
-
-      addCallEvent({
-        callSid: call.sid,
-        eventType: "call-created",
-        eventData: {
-          status: call.status || "queued"
-        }
-      });
-
-      return res
-        .status(201)
-        .json({
-          accepted:
-            true,
-
-          call_sid:
-            call.sid,
-
-          status:
-            call.status,
-
-          error:
-            ""
+      const result =
+        await callService.startOutboundCall({
+          input: req.body,
+          source: "api"
         });
+
+      return res.status(201).json({
+        accepted: true,
+        request_id: result.requestId,
+        call_sid: result.callSid,
+        status: result.status,
+        error: ""
+      });
     } catch (error) {
       console.error(
         "Error creando llamada:",
         error.message
       );
 
-      return res
-        .status(500)
-        .json({
-          accepted:
-            false,
+      const serviceError =
+        error instanceof CallServiceError
+          ? error
+          : null;
 
-          call_sid:
-            null,
-
-          status:
-            "ERROR",
-
-          error:
-            error.message ||
-            "No se pudo iniciar la llamada"
-        });
+      return res.status(
+        serviceError?.status || 500
+      ).json({
+        accepted: false,
+        call_sid: null,
+        status: "ERROR",
+        error:
+          serviceError?.publicMessage ||
+          "No se pudo iniciar la llamada",
+        code:
+          serviceError?.code ||
+          "internal-error"
+      });
     }
   }
 );
@@ -712,28 +530,6 @@ app.post(
       });
     }
 
-    const streamCallSid = req.body.CallSid;
-
-    if (streamCallSid) {
-      updateCallStream({
-        callSid: streamCallSid,
-        streamSid: req.body.StreamSid || null,
-        streamStatus: req.body.StreamEvent || null,
-        streamError: req.body.StreamError || ""
-      });
-
-      addCallEvent({
-        callSid: streamCallSid,
-        streamSid: req.body.StreamSid || null,
-        eventType:
-          req.body.StreamEvent || "stream-status",
-        eventData: {
-          streamError:
-            req.body.StreamError || ""
-        }
-      });
-    }
-
     res.sendStatus(204);
   }
 );
@@ -763,6 +559,33 @@ app.post(
           new Date().toISOString()
       }
     );
+
+    const callSid = req.body.CallSid;
+
+    if (callSid) {
+      updateCallStream({
+        callSid,
+        streamSid:
+          req.body.StreamSid || null,
+        streamStatus:
+          req.body.StreamEvent || null,
+        streamError:
+          req.body.StreamError || ""
+      });
+
+      addCallEvent({
+        callSid,
+        streamSid:
+          req.body.StreamSid || null,
+        eventType:
+          req.body.StreamEvent ||
+          "stream-status",
+        eventData: {
+          streamError:
+            req.body.StreamError || ""
+        }
+      });
+    }
 
     res.sendStatus(204);
   }

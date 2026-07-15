@@ -212,16 +212,41 @@
           <th>Destino</th>
           <th>Estado</th>
           <th>Duración</th>
+          <th>Detalle</th>
         </tr>
       </thead>
 
       <tbody id="callsTableBody">
         <tr>
-          <td colspan="6">
+          <td colspan="7">
             Cargando llamadas...
           </td>
         </tr>
       </tbody>
     </table>
   </div>
+</article>
+
+<article
+  class="glass-card call-detail-card"
+  id="callDetailCard"
+  hidden
+>
+  <div class="card-header">
+    <div>
+      <span class="module-label">DETALLE</span>
+      <h3 id="callDetailTitle">Llamada</h3>
+      <p id="callDetailSubtitle"></p>
+    </div>
+
+    <button
+      class="secondary-button"
+      id="closeCallDetail"
+      type="button"
+    >
+      Cerrar
+    </button>
+  </div>
+
+  <div id="callDetailContent"></div>
 </article>
