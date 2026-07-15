@@ -34,6 +34,21 @@ function safeCompare(valueA, valueB) {
 }
 
 function requireAdmin(req, res, next) {
+  /*
+   * El formulario nuevo utiliza una sesión
+   * administrativa persistente.
+   */
+  if (
+    req.session?.adminUser?.id &&
+    req.session.adminUser.active
+  ) {
+    return next();
+  }
+
+  /*
+   * HTTP Basic se mantiene temporalmente
+   * como acceso de emergencia.
+   */
   if (
     !ADMIN_USERNAME ||
     !ADMIN_PASSWORD

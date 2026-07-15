@@ -3,7 +3,15 @@ import express from "express";
 import http from "http";
 import twilio from "twilio";
 import WebSocket, { WebSocketServer } from "ws";
+import helmet from "helmet";
 import adminRouter from "./admin-router.js";
+import authRoutes from "./admin/routes/auth-routes.js";
+import {
+  adminSessionMiddleware
+} from "./admin/middleware/admin-session.js";
+import {
+  ensureInitialAdmin
+} from "./admin/services/auth-service.js";
 
 import {
   createOrUpdateCall,
@@ -125,6 +133,18 @@ const twilioClient = twilio(
  */
 app.disable("x-powered-by");
 
+/*
+ * Apache termina la conexión HTTPS y reenvía
+ * las solicitudes a Node mediante proxy.
+ */
+app.set("trust proxy", 1);
+
+app.use(
+  helmet({
+    contentSecurityPolicy: false
+  })
+);
+
 app.use(
   express.json({
     limit: "100kb"
@@ -207,7 +227,22 @@ function buildStreamTwiML() {
 /*
  * Estado del servicio.
  */
-app.use("/admin", adminRouter);
+ensureInitialAdmin();
+
+app.use(
+  "/admin",
+  adminSessionMiddleware
+);
+
+app.use(
+  "/admin",
+  authRoutes
+);
+
+app.use(
+  "/admin",
+  adminRouter
+);
 
 app.get(
   "/api/health",

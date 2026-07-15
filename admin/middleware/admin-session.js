@@ -1,5 +1,6 @@
 import session from "express-session";
 import connectSqlite3 from "connect-sqlite3";
+import sqlite3 from "sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -15,8 +16,43 @@ const projectDirectory =
     "../.."
   );
 
+const dataDirectory =
+  path.join(
+    projectDirectory,
+    "data"
+  );
+
+const sessionDatabasePath =
+  path.join(
+    dataDirectory,
+    "admin-sessions.db"
+  );
+
 const SQLiteStore =
   connectSqlite3(session);
+
+/*
+ * connect-sqlite3 necesita una conexión
+ * sqlite3 inicializada, no una ruta.
+ */
+const sessionDatabase =
+  new sqlite3.Database(
+    sessionDatabasePath,
+    error => {
+      if (error) {
+        console.error(
+          "Error abriendo base de sesiones:",
+          error.message
+        );
+
+        return;
+      }
+
+      console.log(
+        "Base de sesiones SQLite preparada"
+      );
+    }
+  );
 
 const SESSION_SECRET =
   String(
@@ -52,18 +88,16 @@ export const adminSessionMiddleware =
     rolling: true,
 
     store: new SQLiteStore({
-      db: "admin-sessions.db",
-      dir: path.join(
-        projectDirectory,
-        "data"
-      ),
-      table: "admin_sessions"
+      db: sessionDatabase,
+      table: "admin_sessions",
+      concurrentDB: true
     }),
 
     cookie: {
       httpOnly: true,
       secure: true,
       sameSite: "lax",
+
       maxAge:
         sessionHours *
         60 *
