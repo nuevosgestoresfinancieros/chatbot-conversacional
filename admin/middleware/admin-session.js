@@ -133,3 +133,33 @@ export function requireAdminSession(
       "Sesión administrativa necesaria"
   });
 }
+
+export function requireAdminRole(
+  ...allowedRoles
+) {
+  const roles = new Set(
+    allowedRoles.map(role =>
+      String(role || "").toLowerCase()
+    )
+  );
+
+  return function checkAdminRole(
+    req,
+    res,
+    next
+  ) {
+    const role = String(
+      req.session?.adminUser?.role || ""
+    ).toLowerCase();
+
+    if (roles.has(role)) {
+      return next();
+    }
+
+    return res.status(403).json({
+      ok: false,
+      error:
+        "No tienes permisos para realizar esta operación"
+    });
+  };
+}

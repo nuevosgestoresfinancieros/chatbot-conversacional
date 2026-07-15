@@ -7,10 +7,17 @@ import helmet from "helmet";
 import adminRouter from "./admin-router.js";
 import authRoutes from "./admin/routes/auth-routes.js";
 import {
-  adminSessionMiddleware
+  adminSessionMiddleware,
+  requireAdminSession,
+  requireAdminRole
 } from "./admin/middleware/admin-session.js";
+
 import {
-  ensureInitialAdmin
+  verifyCsrfToken
+} from "./admin/middleware/csrf.js";
+import {
+  ensureInitialAdmin,
+  addAuditEntry
 } from "./admin/services/auth-service.js";
 
 import {
@@ -239,10 +246,211 @@ app.use(
   authRoutes
 );
 
+
+app.post(
+  "/admin/api/calls/start",
+  requireAdminSession,
+  requireAdminRole("admin"),
+  verifyCsrfToken,
+  async (req, res) => {
+    const adminUser =
+      req.session.adminUser;
+
+    const requestedNumber =
+      String(
+        req.body.telefono || ""
+      ).trim();
+
+    const client =
+      String(
+        req.body.client || ""
+      ).trim();
+
+    const campaign =
+      String(
+        req.body.campaign || ""
+      ).trim();
+
+    const notes =
+      String(
+        req.body.notes || ""
+      ).trim();
+
+    if (!requestedNumber) {
+      return res.status(400).json({
+        ok: false,
+        accepted: false,
+        error:
+          "Debes indicar el número de teléfono"
+      });
+    }
+
+    if (
+      requestedNumber !==
+      ALLOWED_TEST_NUMBER
+    ) {
+      addAuditEntry({
+        userId: adminUser.id,
+        username: adminUser.username,
+        action:
+          "admin-call-rejected",
+        detail: {
+          requestedNumber,
+          reason:
+            "number-not-authorized"
+        },
+        ip: req.ip
+      });
+
+      return res.status(403).json({
+        ok: false,
+        accepted: false,
+        error:
+          "El número no está autorizado para las pruebas"
+      });
+    }
+
+    try {
+      const callTwiml =
+        buildStreamTwiML();
+
+      const call =
+        await twilioClient
+          .calls
+          .create({
+            to:
+              requestedNumber,
+
+            from:
+              TWILIO_PHONE_NUMBER,
+
+            twiml:
+              callTwiml,
+
+            statusCallback:
+              `${PUBLIC_BASE_URL}/twilio/status`,
+
+            statusCallbackMethod:
+              "POST",
+
+            statusCallbackEvent: [
+              "initiated",
+              "ringing",
+              "answered",
+              "completed"
+            ]
+          });
+
+      createOrUpdateCall({
+        callSid: call.sid,
+        direction: "outbound",
+        fromNumber:
+          TWILIO_PHONE_NUMBER,
+        toNumber:
+          requestedNumber,
+        status:
+          call.status || "queued",
+        model:
+          OPENAI_REALTIME_MODEL,
+        voice:
+          OPENAI_REALTIME_VOICE,
+        companyName:
+          COMPANY_NAME
+      });
+
+      addCallEvent({
+        callSid: call.sid,
+        eventType:
+          "admin-call-created",
+        eventData: {
+          adminUserId:
+            adminUser.id,
+          adminUsername:
+            adminUser.username,
+          client:
+            client || null,
+          campaign:
+            campaign || null,
+          notes:
+            notes || null
+        }
+      });
+
+      addAuditEntry({
+        userId:
+          adminUser.id,
+        username:
+          adminUser.username,
+        action:
+          "admin-call-started",
+        detail: {
+          callSid: call.sid,
+          requestedNumber,
+          client:
+            client || null,
+          campaign:
+            campaign || null
+        },
+        ip: req.ip
+      });
+
+      return res.status(201).json({
+        ok: true,
+        accepted: true,
+        call_sid: call.sid,
+        status:
+          call.status || "queued",
+        error: ""
+      });
+    } catch (error) {
+      console.error(
+        "Error llamada desde panel:",
+        error.message
+      );
+
+      addAuditEntry({
+        userId:
+          adminUser.id,
+        username:
+          adminUser.username,
+        action:
+          "admin-call-error",
+        detail: {
+          requestedNumber,
+          error:
+            error.message
+        },
+        ip: req.ip
+      });
+
+      return res.status(500).json({
+        ok: false,
+        accepted: false,
+        call_sid: null,
+        status: "ERROR",
+        error:
+          "No se pudo iniciar la llamada"
+      });
+    }
+  }
+);
+
 app.use(
   "/admin",
   adminRouter
 );
+
+
+/*
+ * Entrada principal de la aplicación.
+ *
+ * El formulario de acceso sigue gestionándose
+ * desde /admin/login. Si ya existe una sesión,
+ * esa ruta redirige automáticamente al panel.
+ */
+app.get("/", (req, res) => {
+  return res.redirect(302, "/admin/login");
+});
 
 app.get(
   "/api/health",

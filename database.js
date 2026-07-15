@@ -347,6 +347,74 @@ const getEventsStatement = database.prepare(`
   ORDER BY id ASC
 `);
 
+const dashboardMetricsStatement =
+  database.prepare(`
+    SELECT
+      COUNT(*) AS total_calls,
+      COALESCE(
+        SUM(
+          CASE
+            WHEN status = 'completed'
+            THEN 1
+            ELSE 0
+          END
+        ),
+        0
+      ) AS completed_calls,
+      COALESCE(
+        SUM(
+          CASE
+            WHEN status IN (
+              'failed',
+              'busy',
+              'no-answer',
+              'canceled'
+            ) OR error_message IS NOT NULL
+            THEN 1
+            ELSE 0
+          END
+        ),
+        0
+      ) AS failed_calls,
+      COALESCE(
+        SUM(
+          CASE
+            WHEN date(created_at) =
+              date('now')
+            THEN 1
+            ELSE 0
+          END
+        ),
+        0
+      ) AS calls_today,
+      COALESCE(
+        SUM(
+          CASE
+            WHEN strftime(
+              '%Y-%m',
+              created_at
+            ) = strftime(
+              '%Y-%m',
+              'now'
+            )
+            THEN 1
+            ELSE 0
+          END
+        ),
+        0
+      ) AS calls_this_month,
+      COALESCE(
+        AVG(
+          CASE
+            WHEN duration_seconds > 0
+            THEN duration_seconds
+          END
+        ),
+        0
+      ) AS average_duration_seconds
+    FROM calls
+  `);
+
 export function createOrUpdateCall({
   callSid,
   direction = "outbound",
@@ -530,6 +598,32 @@ export function getCallDetails(
     events:
       getEventsStatement.all(
         callSid
+      )
+  };
+}
+
+export function getDashboardMetrics() {
+  const metrics =
+    dashboardMetricsStatement.get();
+
+  return {
+    totalCalls:
+      Number(metrics.total_calls || 0),
+    completedCalls:
+      Number(metrics.completed_calls || 0),
+    failedCalls:
+      Number(metrics.failed_calls || 0),
+    callsToday:
+      Number(metrics.calls_today || 0),
+    callsThisMonth:
+      Number(
+        metrics.calls_this_month || 0
+      ),
+    averageDurationSeconds:
+      Math.round(
+        Number(
+          metrics.average_duration_seconds || 0
+        )
       )
   };
 }

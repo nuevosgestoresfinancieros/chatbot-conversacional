@@ -345,10 +345,316 @@
         font-size: 42px;
       }
     }
-  </style>
+
+  /* CIBERMEDIDA_DYNAMIC_LOGIN_BACKGROUND */
+
+  body {
+    position: relative;
+    isolation: isolate;
+    overflow-x: hidden;
+    background:
+      radial-gradient(
+        circle at 15% 15%,
+        rgba(45, 140, 255, 0.22),
+        transparent 32%
+      ),
+      radial-gradient(
+        circle at 85% 25%,
+        rgba(125, 82, 255, 0.20),
+        transparent 30%
+      ),
+      radial-gradient(
+        circle at 50% 90%,
+        rgba(33, 210, 181, 0.14),
+        transparent 34%
+      ),
+      linear-gradient(
+        145deg,
+        #030814 0%,
+        #071426 46%,
+        #081b31 100%
+      ) !important;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -4;
+    pointer-events: none;
+    opacity: 0.42;
+    background-image:
+      linear-gradient(
+        rgba(95, 160, 255, 0.07) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        rgba(95, 160, 255, 0.07) 1px,
+        transparent 1px
+      );
+    background-size: 54px 54px;
+    mask-image:
+      linear-gradient(
+        to bottom,
+        black,
+        transparent 92%
+      );
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    inset: -25%;
+    z-index: -5;
+    pointer-events: none;
+    background:
+      conic-gradient(
+        from 180deg at 50% 50%,
+        rgba(45, 140, 255, 0.08),
+        rgba(118, 74, 255, 0.08),
+        rgba(26, 211, 181, 0.06),
+        rgba(45, 140, 255, 0.08)
+      );
+    animation:
+      loginGradientRotation
+      28s linear infinite;
+  }
+
+  .dynamic-login-background {
+    position: fixed;
+    inset: 0;
+    z-index: -3;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .dynamic-login-background .orb {
+    position: absolute;
+    display: block;
+    border-radius: 999px;
+    opacity: 0.46;
+    filter: blur(2px);
+    background:
+      radial-gradient(
+        circle at 30% 30%,
+        rgba(255, 255, 255, 0.72),
+        rgba(75, 151, 255, 0.30) 26%,
+        rgba(78, 90, 255, 0.09) 70%,
+        transparent
+      );
+    box-shadow:
+      0 0 40px rgba(60, 145, 255, 0.20);
+    animation:
+      loginOrbFloat
+      var(--duration)
+      ease-in-out
+      infinite alternate;
+  }
+
+  .dynamic-login-background .orb:nth-child(1) {
+    --duration: 15s;
+    width: 150px;
+    height: 150px;
+    top: 9%;
+    left: 7%;
+  }
+
+  .dynamic-login-background .orb:nth-child(2) {
+    --duration: 19s;
+    width: 95px;
+    height: 95px;
+    top: 67%;
+    left: 13%;
+    animation-delay: -5s;
+  }
+
+  .dynamic-login-background .orb:nth-child(3) {
+    --duration: 17s;
+    width: 180px;
+    height: 180px;
+    top: 12%;
+    right: 8%;
+    animation-delay: -8s;
+  }
+
+  .dynamic-login-background .orb:nth-child(4) {
+    --duration: 22s;
+    width: 115px;
+    height: 115px;
+    right: 18%;
+    bottom: 8%;
+    animation-delay: -3s;
+  }
+
+  .dynamic-login-background .orb:nth-child(5) {
+    --duration: 18s;
+    width: 68px;
+    height: 68px;
+    top: 43%;
+    left: 24%;
+    animation-delay: -11s;
+  }
+
+  .dynamic-login-background .orb:nth-child(6) {
+    --duration: 21s;
+    width: 78px;
+    height: 78px;
+    top: 48%;
+    right: 24%;
+    animation-delay: -7s;
+  }
+
+  .dynamic-login-background .voice-wave {
+    position: absolute;
+    left: 50%;
+    bottom: 7%;
+    width: min(760px, 88vw);
+    height: 180px;
+    transform: translateX(-50%);
+    opacity: 0.26;
+  }
+
+  .dynamic-login-background .voice-wave span {
+    position: absolute;
+    bottom: 50%;
+    left: calc(var(--position) * 4%);
+    width: 3px;
+    height: calc(14px + var(--height) * 5px);
+    border-radius: 999px;
+    background:
+      linear-gradient(
+        to top,
+        rgba(42, 207, 181, 0.12),
+        rgba(79, 153, 255, 0.90)
+      );
+    transform-origin: center;
+    animation:
+      loginVoiceWave
+      2.4s ease-in-out
+      infinite;
+    animation-delay:
+      calc(var(--position) * -80ms);
+  }
+
+  .login-card,
+  main,
+  .container {
+    position: relative;
+    z-index: 2;
+  }
+
+  .login-card {
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    box-shadow:
+      0 28px 90px rgba(0, 0, 0, 0.42),
+      0 0 0 1px rgba(111, 172, 255, 0.06);
+  }
+
+  @keyframes loginOrbFloat {
+    0% {
+      transform:
+        translate3d(-12px, -18px, 0)
+        scale(0.94);
+    }
+
+    50% {
+      transform:
+        translate3d(22px, 16px, 0)
+        scale(1.06);
+    }
+
+    100% {
+      transform:
+        translate3d(-8px, 34px, 0)
+        scale(0.98);
+    }
+  }
+
+  @keyframes loginGradientRotation {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes loginVoiceWave {
+    0%,
+    100% {
+      transform: scaleY(0.32);
+      opacity: 0.28;
+    }
+
+    50% {
+      transform: scaleY(1);
+      opacity: 0.86;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .dynamic-login-background .orb:nth-child(1),
+    .dynamic-login-background .orb:nth-child(3) {
+      width: 110px;
+      height: 110px;
+    }
+
+    .dynamic-login-background .voice-wave {
+      bottom: 2%;
+      opacity: 0.18;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dynamic-login-background .orb,
+    .dynamic-login-background .voice-wave span,
+    body::after {
+      animation: none !important;
+    }
+  }
+
+</style>
 </head>
 
 <body>
+
+  <div
+    class="dynamic-login-background"
+    aria-hidden="true"
+  >
+    <span class="orb"></span>
+    <span class="orb"></span>
+    <span class="orb"></span>
+    <span class="orb"></span>
+    <span class="orb"></span>
+    <span class="orb"></span>
+
+    <div class="voice-wave">
+      <span style="--position:1;--height:2"></span>
+      <span style="--position:2;--height:4"></span>
+      <span style="--position:3;--height:7"></span>
+      <span style="--position:4;--height:3"></span>
+      <span style="--position:5;--height:9"></span>
+      <span style="--position:6;--height:5"></span>
+      <span style="--position:7;--height:11"></span>
+      <span style="--position:8;--height:6"></span>
+      <span style="--position:9;--height:13"></span>
+      <span style="--position:10;--height:7"></span>
+      <span style="--position:11;--height:10"></span>
+      <span style="--position:12;--height:5"></span>
+      <span style="--position:13;--height:12"></span>
+      <span style="--position:14;--height:8"></span>
+      <span style="--position:15;--height:14"></span>
+      <span style="--position:16;--height:6"></span>
+      <span style="--position:17;--height:11"></span>
+      <span style="--position:18;--height:4"></span>
+      <span style="--position:19;--height:9"></span>
+      <span style="--position:20;--height:3"></span>
+      <span style="--position:21;--height:7"></span>
+      <span style="--position:22;--height:4"></span>
+      <span style="--position:23;--height:6"></span>
+    </div>
+  </div>
+
   <main class="shell">
     <section class="presentation">
       <div class="brand">
@@ -441,3 +747,33 @@
   </main>
 </body>
 </html>
+
+<style id="dynamic-login-visibility-fix">
+  body {
+    position: relative !important;
+    isolation: isolate;
+  }
+
+  .dynamic-login-background {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 0 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: none;
+  }
+
+  body > *:not(.dynamic-login-background) {
+    position: relative;
+    z-index: 2;
+  }
+
+  .dynamic-login-background .orb {
+    visibility: visible !important;
+  }
+
+  .dynamic-login-background .voice-wave {
+    z-index: 1;
+  }
+</style>

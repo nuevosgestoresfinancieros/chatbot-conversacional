@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <meta
+    name="csrf-token"
+    content="{{CSRF_TOKEN}}"
+  >
+
+  <meta
+    name="admin-role"
+    content="{{USER_ROLE}}"
+  >
+
+  <title>Panel Premium | Cibermedida</title>
+
+  <link
+    rel="stylesheet"
+    href="/admin/assets/css/admin-premium.css"
+  >
+</head>
+
+<body>
+  <div
+    class="dynamic-background"
+    aria-hidden="true"
+  >
+    <div class="grid-background"></div>
+
+    <span class="orb orb-one"></span>
+    <span class="orb orb-two"></span>
+    <span class="orb orb-three"></span>
+    <span class="orb orb-four"></span>
+    <span class="orb orb-five"></span>
+    <span class="orb orb-six"></span>
+
+    <div class="voice-wave">
+      <span style="--i:1;--h:3"></span>
+      <span style="--i:2;--h:7"></span>
+      <span style="--i:3;--h:4"></span>
+      <span style="--i:4;--h:10"></span>
+      <span style="--i:5;--h:6"></span>
+      <span style="--i:6;--h:13"></span>
+      <span style="--i:7;--h:8"></span>
+      <span style="--i:8;--h:15"></span>
+      <span style="--i:9;--h:5"></span>
+      <span style="--i:10;--h:12"></span>
+      <span style="--i:11;--h:7"></span>
+      <span style="--i:12;--h:14"></span>
+      <span style="--i:13;--h:9"></span>
+      <span style="--i:14;--h:16"></span>
+      <span style="--i:15;--h:6"></span>
+      <span style="--i:16;--h:12"></span>
+      <span style="--i:17;--h:5"></span>
+      <span style="--i:18;--h:10"></span>
+      <span style="--i:19;--h:4"></span>
+      <span style="--i:20;--h:8"></span>
+    </div>
+  </div>
+
+  <div class="app-shell">
+
+    <aside
+      class="sidebar"
+      id="sidebar"
+    >
+      <div class="brand">
+        <div class="brand-logo">CM</div>
+
+        <div class="brand-text">
+          <strong>Cibermedida</strong>
+          <span>Panel Premium IA</span>
+        </div>
+
+        <button
+          class="sidebar-close"
+          id="sidebarClose"
+          type="button"
+          aria-label="Cerrar menú"
+        >
+          ×
+        </button>
+      </div>
+<nav class="navigation">
+
+        <div class="nav-section">
+          <button
+            class="nav-item active"
+            data-module="dashboard"
+            type="button"
+          >
+            <span class="nav-icon">🏠</span>
+            <span>Dashboard</span>
+          </button>
+        </div>
+
+        <div class="nav-section">
+          <button
+            class="nav-item"
+            data-module="calls"
+            type="button"
+          >
+            <span class="nav-icon">📞</span>
+            <span>Llamadas</span>
+          </button>
+
+          <button
+            class="nav-item"
+            data-module="conversations"
+            type="button"
+          >
+            <span class="nav-icon">💬</span>
+            <span>Conversaciones</span>
+          </button>
+
+          <button
+            class="nav-item"
+            data-module="clients"
+            type="button"
+          >
+            <span class="nav-icon">👥</span>
+            <span>Clientes</span>
+          </button>
+        </div>
+
+        <div class="nav-section">
+          <button
+            class="nav-item"
+            data-module="agents"
+            type="button"
+          >
+            <span class="nav-icon">🤖</span>
+            <span>Agentes IA</span>
+          </button>
+
+          <button
+            class="nav-item"
+            data-module="rag"
+            type="button"
+          >
+            <span class="nav-icon">📚</span>
+            <span>Documentación (RAG)</span>
+          </button>
+
+          <button
+            class="nav-item"
+            data-module="ai-stats"
+            type="button"
+          >
+            <span class="nav-icon">📊</span>
+            <span>Estadísticas IA</span>
+          </button>
+        </div>
+
+        <div
+          class="nav-section connections-section"
+          data-admin-only
+        >
+
+          <button
+            class="nav-item connections-toggle"
+            id="connectionsToggle"
+            data-module="connections"
+            type="button"
+            aria-expanded="true"
+            aria-controls="connectionsSubmenu"
+          >
+            <span class="nav-icon">🔌</span>
+            <span>Conexiones</span>
+            <span class="submenu-arrow">⌄</span>
+          </button>
+
+          <div
+            class="connections-submenu open"
+            id="connectionsSubmenu"
+          >
+            <button
+              class="nav-subitem"
+              data-module="make"
+              type="button"
+            >
+              <span class="branch-symbol">├─</span>
+              <span>Make</span>
+            </button>
+
+            <button
+              class="nav-subitem"
+              data-module="twilio"
+              type="button"
+            >
+              <span class="branch-symbol">├─</span>
+              <span>Twilio</span>
+            </button>
+
+            <button
+              class="nav-subitem"
+              data-module="openai"
+              type="button"
+            >
+              <span class="branch-symbol">├─</span>
+              <span>OpenAI</span>
+            </button>
+
+            <button
+              class="nav-subitem"
+              data-module="webhooks"
+              type="button"
+            >
+              <span class="branch-symbol">├─</span>
+              <span>Webhooks</span>
+            </button>
+
+            <button
+              class="nav-subitem"
+              data-module="external-apis"
+              type="button"
+            >
+              <span class="branch-symbol">└─</span>
+              <span>APIs externas</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="nav-section">
+          <button
+            class="nav-item"
+            data-module="users"
+            data-admin-only
+            type="button"
+          >
+            <span class="nav-icon">👤</span>
+            <span>Usuarios</span>
+          </button>
+
+          <button
+            class="nav-item"
+            data-module="audit"
+            type="button"
+          >
+            <span class="nav-icon">🧾</span>
+            <span>Auditoría</span>
+          </button>
+
+          <button
+            class="nav-item"
+            data-module="settings"
+            data-admin-only
+            type="button"
+          >
+            <span class="nav-icon">⚙️</span>
+            <span>Configuración</span>
+          </button>
+        </div>
+
+        <div class="nav-section">
+          <button
+            class="nav-item"
+            data-module="system"
+            type="button"
+          >
+            <span class="nav-icon">🖥️</span>
+            <span>Monitor del sistema</span>
+          </button>
+        </div>
+
+      </nav>
+
+      <div class="sidebar-status">
+        <span class="live-indicator"></span>
+
+        <div>
+          <strong>Agente conectado</strong>
+          <span>OpenAI Realtime</span>
+        </div>
+      </div>
+    </aside>
+
+    <div
+      class="sidebar-overlay"
+      id="sidebarOverlay"
+    ></div>
+
+    <div class="main-area">
+
+      <header class="topbar">
+        <div class="topbar-main">
+          <button
+            class="menu-button"
+            id="menuButton"
+            type="button"
+            aria-label="Abrir menú"
+          >
+            ☰
+          </button>
+
+          <div>
+            <h1 id="pageTitle">Dashboard</h1>
+
+            <p id="pageDescription">
+              Estado general del agente telefónico.
+            </p>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <div class="system-live">
+            <span></span>
+            Sistema operativo
+          </div>
+
+          <div class="user-avatar">
+            {{USER_INITIAL}}
+          </div>
+
+          <div class="user-details">
+            <strong>{{USERNAME}}</strong>
+            <span>{{USER_ROLE}}</span>
+          </div>
+
+          <form
+            method="post"
+            action="/admin/logout"
+          >
+            <input
+              type="hidden"
+              name="_csrf"
+              value="{{CSRF_TOKEN}}"
+            >
+
+            <button
+              class="logout-button"
+              type="submit"
+            >
+              Salir
+            </button>
+          </form>
+        </div>
+      </header>
+
+      <main class="content">
+
+        <section
+          class="module active"
+          id="module-dashboard"
+        >
+          <div class="hero-panel">
+            <div>
+              <span class="hero-tag">
+                AGENTE TELEFÓNICO IA
+              </span>
+
+              <h2>
+                Centro de control de Cibermedida
+              </h2>
+
+              <p>
+                Supervisa llamadas, conversaciones,
+                automatizaciones y servicios de
+                inteligencia artificial desde un
+                único panel.
+              </p>
+            </div>
+
+            <div class="voice-visualizer">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+
+          <div class="metrics-grid">
+
+            <article class="metric-card">
+              <div class="metric-icon success">●</div>
+
+              <div>
+                <span>Estado del servicio</span>
+                <strong id="serviceStatus">
+                  Comprobando
+                </strong>
+                <small id="serviceDetail">
+                  Conectando con el servidor
+                </small>
+              </div>
+            </article>
+
+            <article class="metric-card">
+              <div class="metric-icon blue">☎</div>
+
+              <div>
+                <span>Llamadas registradas</span>
+                <strong id="totalCalls">0</strong>
+                <small>Historial almacenado</small>
+              </div>
+            </article>
+
+            <article class="metric-card">
+              <div class="metric-icon purple">✓</div>
+
+              <div>
+                <span>Completadas</span>
+                <strong id="completedCalls">0</strong>
+                <small>Llamadas finalizadas</small>
+              </div>
+            </article>
+
+            <article class="metric-card">
+              <div class="metric-icon warning">!</div>
+
+              <div>
+                <span>Con incidencias</span>
+                <strong id="failedCalls">0</strong>
+                <small>Errores o cancelaciones</small>
+              </div>
+            </article>
+
+            <article class="metric-card">
+              <div class="metric-icon blue">◷</div>
+
+              <div>
+                <span>Llamadas de hoy</span>
+                <strong id="callsToday">0</strong>
+                <small>Actividad del día</small>
+              </div>
+            </article>
+
+            <article class="metric-card">
+              <div class="metric-icon purple">▦</div>
+
+              <div>
+                <span>Llamadas del mes</span>
+                <strong id="callsThisMonth">0</strong>
+                <small>Mes actual</small>
+              </div>
+            </article>
+
+            <article class="metric-card">
+              <div class="metric-icon success">◴</div>
+
+              <div>
+                <span>Duración media</span>
+                <strong id="averageDuration">0:00</strong>
+                <small>Llamadas con duración</small>
+              </div>
+            </article>
+
+          </div>
+
+          <div class="dashboard-grid">
+
+            <article class="glass-card recent-activity">
+              <div class="card-header">
+                <div>
+                  <h3>Actividad reciente</h3>
+                  <p>Últimas llamadas registradas</p>
+                </div>
+
+                <button
+                  class="secondary-button"
+                  id="refreshDashboard"
+                  type="button"
+                >
+                  Actualizar
+                </button>
+              </div>
+
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Teléfono</th>
+                      <th>Estado</th>
+                      <th>Duración</th>
+                    </tr>
+                  </thead>
+
+                  <tbody id="recentCallsBody">
+                    <tr>
+                      <td colspan="4">
+                        Cargando actividad...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </article>
+
+            <article class="glass-card system-card">
+              <div class="card-header">
+                <div>
+                  <h3>Servicios</h3>
+                  <p>Estado de la plataforma</p>
+                </div>
+              </div>
+
+              <div class="service-list">
+                <div class="service-row">
+                  <div>
+                    <span class="service-dot green"></span>
+                    Node.js y Express
+                  </div>
+
+                  <strong>Operativo</strong>
+                </div>
+
+                <div class="service-row">
+                  <div>
+                    <span
+                      class="service-dot"
+                      id="databaseDot"
+                    ></span>
+                    SQLite
+                  </div>
+
+                  <strong id="databaseStatus">
+                    Comprobando
+                  </strong>
+                </div>
+
+                <div class="service-row">
+                  <div>
+                    <span class="service-dot green"></span>
+                    Twilio
+                  </div>
+
+                  <strong>Configurado</strong>
+                </div>
+
+                <div class="service-row">
+                  <div>
+                    <span class="service-dot green"></span>
+                    OpenAI Realtime
+                  </div>
+
+                  <strong>Configurado</strong>
+                </div>
+
+                <div class="service-row">
+                  <div>
+                    <span class="service-dot yellow"></span>
+                    Make
+                  </div>
+
+                  <strong>Preparado</strong>
+                </div>
+              </div>
+            </article>
+
+          </div>
+        </section>
+<section
+          class="module"
+          id="module-calls"
+        >
+          <div id="callsModuleMount"></div>
+        </section>
+
+        <section
+          class="module"
+          id="module-placeholder"
+        >
+          <div class="module-heading">
+            <div>
+              <span
+                class="module-label"
+                id="placeholderCategory"
+              >
+                MÓDULO
+              </span>
+
+              <h2 id="placeholderTitle">
+                Módulo
+              </h2>
+
+              <p id="placeholderDescription">
+                Configuración del módulo.
+              </p>
+            </div>
+          </div>
+
+          <div id="dynamicModuleHost"></div>
+        </section>
+
+      </main>
+
+      <footer class="footer">
+        <span>
+          © Cibermedida · Panel Premium
+        </span>
+
+        <span id="footerSystemStatus">
+          Comprobando plataforma
+        </span>
+      </footer>
+    </div>
+  </div>
+
+  <script
+    src="/admin/assets/js/modules/module-loader.js"
+    defer
+  ></script>
+
+  <script
+    src="/admin/assets/js/modules/calls.js"
+    defer
+  ></script>
+
+  <script
+    src="/admin/assets/js/admin-premium.js"
+    defer
+  ></script>
+</body>
+</html>
