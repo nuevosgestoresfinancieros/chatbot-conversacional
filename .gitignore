@@ -1,0 +1,26 @@
+# Credenciales y entorno
+.env
+.env.*
+
+# Dependencias (se regeneran con npm install)
+node_modules/
+
+# Base de datos y datos locales
+data/
+*.sqlite
+*.sqlite3
+*.db
+
+# Backups locales
+backups/
+*.backup
+*.backup-*
+*.bak
+
+# Logs
+*.log
+logs/
+
+# Sistema
+.DS_Store
+Thumbs.db
