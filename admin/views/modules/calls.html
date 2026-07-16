@@ -1,0 +1,252 @@
+<div class="module-heading">
+  <div>
+    <span class="module-label">
+      OPERACIONES
+    </span>
+
+    <h2>Centro de llamadas</h2>
+
+    <p>
+      Inicia llamadas mediante Twilio y consulta
+      el historial almacenado en SQLite.
+    </p>
+  </div>
+
+  <button
+    class="secondary-button"
+    id="reloadCalls"
+    type="button"
+  >
+    Actualizar historial
+  </button>
+</div>
+
+<div class="calls-layout">
+
+  <article class="glass-card call-launcher-card">
+    <div class="card-header">
+      <div>
+        <h3>Nueva llamada</h3>
+
+        <p>
+          La llamada utilizará el agente configurado
+          en el servidor.
+        </p>
+      </div>
+
+      <span class="secure-operation">
+        Operación protegida
+      </span>
+    </div>
+
+    <form
+      class="call-form"
+      id="newCallForm"
+      autocomplete="off"
+    >
+      <div class="form-grid">
+
+        <label class="form-field form-field-wide">
+          <span>Cliente</span>
+
+          <input
+            id="callClient"
+            name="client"
+            type="text"
+            placeholder="Nombre o referencia del cliente"
+            maxlength="150"
+          >
+
+          <small>
+            Opcional. Quedará preparado para asociarlo
+            al futuro módulo CRM.
+          </small>
+        </label>
+
+        <label class="form-field">
+          <span>Teléfono</span>
+
+          <input
+            id="callPhone"
+            name="telefono"
+            type="tel"
+            placeholder="+34600000000"
+            required
+            maxlength="25"
+          >
+
+          <small>
+            Durante las pruebas solo se acepta el número
+            autorizado en el servidor.
+          </small>
+        </label>
+
+        <label class="form-field">
+          <span>Agente IA</span>
+
+          <select
+            id="callAgent"
+            name="agent"
+          >
+            <option value="principal">
+              Agente principal
+            </option>
+          </select>
+        </label>
+
+        <label class="form-field">
+          <span>Voz</span>
+
+          <select
+            id="callVoice"
+            name="voice"
+          >
+            <option value="marin">
+              marin
+            </option>
+          </select>
+        </label>
+
+        <label class="form-field">
+          <span>Campaña</span>
+
+          <input
+            id="callCampaign"
+            name="campaign"
+            type="text"
+            placeholder="Opcional"
+            maxlength="150"
+          >
+        </label>
+
+        <label class="form-field form-field-wide">
+          <span>Notas internas</span>
+
+          <textarea
+            id="callNotes"
+            name="notes"
+            rows="4"
+            maxlength="1000"
+            placeholder="Motivo de la llamada, contexto o instrucciones internas"
+          ></textarea>
+        </label>
+
+      </div>
+
+      <div class="call-form-footer">
+        <div
+          class="operation-message"
+          id="callOperationMessage"
+          role="status"
+          aria-live="polite"
+        ></div>
+
+        <button
+          class="primary-button call-submit-button"
+          id="startCallButton"
+          type="submit"
+        >
+          <span class="button-icon">📞</span>
+          Iniciar llamada
+        </button>
+      </div>
+    </form>
+  </article>
+
+  <article
+    class="glass-card call-result-card"
+    id="callResultCard"
+    hidden
+  >
+    <div class="call-result-icon">
+      ✓
+    </div>
+
+    <div>
+      <span class="module-label">
+        LLAMADA SOLICITADA
+      </span>
+
+      <h3 id="callResultTitle">
+        Twilio está procesando la llamada
+      </h3>
+
+      <dl class="call-result-data">
+        <div>
+          <dt>Call SID</dt>
+          <dd id="callResultSid">—</dd>
+        </div>
+
+        <div>
+          <dt>Estado</dt>
+          <dd id="callResultStatus">—</dd>
+        </div>
+      </dl>
+    </div>
+  </article>
+
+</div>
+
+<div class="module-heading calls-history-heading">
+  <div>
+    <span class="module-label">
+      REGISTRO
+    </span>
+
+    <h2>Historial de llamadas</h2>
+
+    <p>
+      Llamadas registradas por el backend del agente.
+    </p>
+  </div>
+</div>
+
+<article class="glass-card">
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Call SID</th>
+          <th>Origen</th>
+          <th>Destino</th>
+          <th>Estado</th>
+          <th>Duración</th>
+          <th>Detalle</th>
+        </tr>
+      </thead>
+
+      <tbody id="callsTableBody">
+        <tr>
+          <td colspan="7">
+            Cargando llamadas...
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</article>
+
+<article
+  class="glass-card call-detail-card"
+  id="callDetailCard"
+  hidden
+>
+  <div class="card-header">
+    <div>
+      <span class="module-label">DETALLE</span>
+      <h3 id="callDetailTitle">Llamada</h3>
+      <p id="callDetailSubtitle"></p>
+    </div>
+
+    <button
+      class="secondary-button"
+      id="closeCallDetail"
+      type="button"
+    >
+      Cerrar
+    </button>
+  </div>
+
+  <div id="callDetailContent"></div>
+</article>

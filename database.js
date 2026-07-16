@@ -38,6 +38,8 @@ database.exec(`
 
     call_sid TEXT NOT NULL UNIQUE,
 
+    request_id TEXT,
+
     stream_sid TEXT,
 
     direction TEXT DEFAULT 'outbound',
@@ -62,6 +64,18 @@ database.exec(`
 
     company_name TEXT,
 
+    client TEXT,
+
+    agent TEXT,
+
+    campaign TEXT,
+
+    notes TEXT,
+
+    admin_user_id INTEGER,
+
+    admin_username TEXT,
+
     stream_status TEXT,
 
     stream_error TEXT,
@@ -74,6 +88,40 @@ database.exec(`
     updated_at TEXT NOT NULL
       DEFAULT CURRENT_TIMESTAMP
   );
+`);
+
+/*
+ * Intentos de llamada, incluidos los fallos
+ * ocurridos antes de recibir un Call SID.
+ */
+database.exec(`
+  CREATE TABLE IF NOT EXISTS call_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    request_id TEXT NOT NULL UNIQUE,
+    call_sid TEXT,
+    source TEXT NOT NULL,
+    requested_number TEXT,
+    client TEXT,
+    agent TEXT,
+    voice TEXT,
+    campaign TEXT,
+    notes TEXT,
+    admin_user_id INTEGER,
+    admin_username TEXT,
+    status TEXT NOT NULL DEFAULT 'created',
+    error_code TEXT,
+    error_message TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE INDEX IF NOT EXISTS
+    idx_call_attempts_created_at
+  ON call_attempts(created_at);
+
+  CREATE INDEX IF NOT EXISTS
+    idx_call_attempts_call_sid
+  ON call_attempts(call_sid);
 `);
 
 /*
@@ -153,6 +201,7 @@ database.exec(`
 const insertCallStatement = database.prepare(`
   INSERT INTO calls (
     call_sid,
+    request_id,
     direction,
     from_number,
     to_number,
@@ -160,11 +209,18 @@ const insertCallStatement = database.prepare(`
     model,
     voice,
     company_name,
+    client,
+    agent,
+    campaign,
+    notes,
+    admin_user_id,
+    admin_username,
     created_at,
     updated_at
   )
   VALUES (
     @callSid,
+    @requestId,
     @direction,
     @fromNumber,
     @toNumber,
@@ -172,6 +228,12 @@ const insertCallStatement = database.prepare(`
     @model,
     @voice,
     @companyName,
+    @client,
+    @agent,
+    @campaign,
+    @notes,
+    @adminUserId,
+    @adminUsername,
     @createdAt,
     @updatedAt
   )
@@ -184,6 +246,13 @@ const insertCallStatement = database.prepare(`
     model = excluded.model,
     voice = excluded.voice,
     company_name = excluded.company_name,
+    request_id = excluded.request_id,
+    client = excluded.client,
+    agent = excluded.agent,
+    campaign = excluded.campaign,
+    notes = excluded.notes,
+    admin_user_id = excluded.admin_user_id,
+    admin_username = excluded.admin_username,
     updated_at = excluded.updated_at
 `);
 
@@ -291,10 +360,59 @@ const insertEventStatement = database.prepare(`
   )
 `);
 
+const insertCallAttemptStatement =
+  database.prepare(`
+    INSERT INTO call_attempts (
+      request_id,
+      source,
+      requested_number,
+      client,
+      agent,
+      voice,
+      campaign,
+      notes,
+      admin_user_id,
+      admin_username,
+      status,
+      created_at,
+      updated_at
+    ) VALUES (
+      @requestId,
+      @source,
+      @requestedNumber,
+      @client,
+      @agent,
+      @voice,
+      @campaign,
+      @notes,
+      @adminUserId,
+      @adminUsername,
+      @status,
+      @createdAt,
+      @updatedAt
+    )
+  `);
+
+const updateCallAttemptStatement =
+  database.prepare(`
+    UPDATE call_attempts
+    SET
+      call_sid = COALESCE(
+        @callSid,
+        call_sid
+      ),
+      status = @status,
+      error_code = @errorCode,
+      error_message = @errorMessage,
+      updated_at = @updatedAt
+    WHERE request_id = @requestId
+  `);
+
 const listCallsStatement = database.prepare(`
   SELECT
     id,
     call_sid,
+    request_id,
     stream_sid,
     direction,
     from_number,
@@ -307,6 +425,12 @@ const listCallsStatement = database.prepare(`
     model,
     voice,
     company_name,
+    client,
+    agent,
+    campaign,
+    notes,
+    admin_user_id,
+    admin_username,
     stream_status,
     stream_error,
     error_message,
@@ -347,15 +471,90 @@ const getEventsStatement = database.prepare(`
   ORDER BY id ASC
 `);
 
+const dashboardMetricsStatement =
+  database.prepare(`
+    SELECT
+      COUNT(*) AS total_calls,
+      COALESCE(
+        SUM(
+          CASE
+            WHEN status = 'completed'
+            THEN 1
+            ELSE 0
+          END
+        ),
+        0
+      ) AS completed_calls,
+      COALESCE(
+        SUM(
+          CASE
+            WHEN status IN (
+              'failed',
+              'busy',
+              'no-answer',
+              'canceled'
+            ) OR error_message IS NOT NULL
+            THEN 1
+            ELSE 0
+          END
+        ),
+        0
+      ) AS failed_calls,
+      COALESCE(
+        SUM(
+          CASE
+            WHEN date(created_at) =
+              date('now')
+            THEN 1
+            ELSE 0
+          END
+        ),
+        0
+      ) AS calls_today,
+      COALESCE(
+        SUM(
+          CASE
+            WHEN strftime(
+              '%Y-%m',
+              created_at
+            ) = strftime(
+              '%Y-%m',
+              'now'
+            )
+            THEN 1
+            ELSE 0
+          END
+        ),
+        0
+      ) AS calls_this_month,
+      COALESCE(
+        AVG(
+          CASE
+            WHEN duration_seconds > 0
+            THEN duration_seconds
+          END
+        ),
+        0
+      ) AS average_duration_seconds
+    FROM calls
+  `);
+
 export function createOrUpdateCall({
   callSid,
+  requestId = null,
   direction = "outbound",
   fromNumber = null,
   toNumber = null,
   status = "created",
   model = null,
   voice = null,
-  companyName = null
+  companyName = null,
+  client = null,
+  agent = null,
+  campaign = null,
+  notes = null,
+  adminUserId = null,
+  adminUsername = null
 }) {
   if (!callSid) {
     return false;
@@ -366,6 +565,7 @@ export function createOrUpdateCall({
 
   insertCallStatement.run({
     callSid,
+    requestId,
     direction,
     fromNumber,
     toNumber,
@@ -373,11 +573,68 @@ export function createOrUpdateCall({
     model,
     voice,
     companyName,
+    client,
+    agent,
+    campaign,
+    notes,
+    adminUserId,
+    adminUsername,
     createdAt: timestamp,
     updatedAt: timestamp
   });
 
   return true;
+}
+
+export function createCallAttempt({
+  requestId,
+  source,
+  requestedNumber = null,
+  client = null,
+  agent = null,
+  voice = null,
+  campaign = null,
+  notes = null,
+  adminUserId = null,
+  adminUsername = null,
+  status = "created"
+}) {
+  const timestamp =
+    new Date().toISOString();
+
+  insertCallAttemptStatement.run({
+    requestId,
+    source,
+    requestedNumber,
+    client,
+    agent,
+    voice,
+    campaign,
+    notes,
+    adminUserId,
+    adminUsername,
+    status,
+    createdAt: timestamp,
+    updatedAt: timestamp
+  });
+}
+
+export function updateCallAttempt({
+  requestId,
+  callSid = null,
+  status,
+  errorCode = null,
+  errorMessage = null
+}) {
+  updateCallAttemptStatement.run({
+    requestId,
+    callSid,
+    status,
+    errorCode,
+    errorMessage,
+    updatedAt:
+      new Date().toISOString()
+  });
 }
 
 export function updateCallStatus({
@@ -530,6 +787,32 @@ export function getCallDetails(
     events:
       getEventsStatement.all(
         callSid
+      )
+  };
+}
+
+export function getDashboardMetrics() {
+  const metrics =
+    dashboardMetricsStatement.get();
+
+  return {
+    totalCalls:
+      Number(metrics.total_calls || 0),
+    completedCalls:
+      Number(metrics.completed_calls || 0),
+    failedCalls:
+      Number(metrics.failed_calls || 0),
+    callsToday:
+      Number(metrics.calls_today || 0),
+    callsThisMonth:
+      Number(
+        metrics.calls_this_month || 0
+      ),
+    averageDurationSeconds:
+      Math.round(
+        Number(
+          metrics.average_duration_seconds || 0
+        )
       )
   };
 }
